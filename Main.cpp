@@ -1,4 +1,5 @@
 #include <iostream>
+#include <QException>
 #include <string.h>
 #include <string>
 #include <iomanip>
@@ -41,11 +42,12 @@ int main()
         {
             queue = getListOfOps(term);
         }
-        catch (exception e)
+        catch (const invalid_argument &ex)
         {
-            cout << e.what() << endl;
+            cerr << ex.what() << endl;
             return 1;
         }
+        printTerm(queue);
 
 //        vector<string> pre_2_in = pre2in(queue);
 //        vector<string> post_2_in = post2in(queue);
@@ -80,7 +82,6 @@ int main()
 //        }
         cout << pressKey;
         cin.get();
-        cin.get();
     } while (true);
     return 0;
 }
@@ -98,17 +99,23 @@ vector<string> getListOfOps(string str)
         if (localTmp >= '0' && localTmp <= '9')
         {
             if (lastOp == ")")
-                throw new invalid_argument("wrong input");
+                throw invalid_argument("number after ')' at position " + i);
             tmp += localTmp;
         }
         else if (localTmp == '+' || localTmp == '-' ||
                  localTmp == '/' || localTmp == '*')
         {
-            if (tmp == "" && (lastOp == "+" || lastOp == "-" ||
-                    lastOp == "*" || lastOp == "/" ||
-                    lastOp == "(" || result.size() == 0))
-                throw new invalid_argument("wrong input");
-            if (tmp != "")
+            if (tmp == "")
+            {
+                if (result.size() == 0)
+                    throw invalid_argument("operand in the beginning of the input at position " + i);
+                else if (lastOp == "+" || lastOp == "-" ||
+                         lastOp == "*" || lastOp == "/")
+                    throw invalid_argument("operand after operand at position " + i);
+                else if (lastOp == "(")
+                    throw invalid_argument("operand after '(' at position " + i);
+            }
+            else // if (tmp != "")
             {
                 result.push_back(tmp);
                 tmp = "";
@@ -118,14 +125,16 @@ vector<string> getListOfOps(string str)
         else if (localTmp == '(')
         {
             openParantheses++;
-            if (tmp != "" || lastOp == ")")
-                throw new invalid_argument("wrong input");
+            if (tmp != "")
+                throw invalid_argument("'(' after number at position " + i);
+            else if (lastOp == ")")
+                throw invalid_argument("'(' after ')' at position " + i);
             result.push_back(string(1, localTmp));
         }
         else if (localTmp == ')')
         {
             if (openParantheses == 0)
-                throw new invalid_argument("wrong input");
+                throw invalid_argument("number of ')' is more that '(' at position" + i);
             if (tmp != "")
             {
                 result.push_back(tmp);
@@ -136,7 +145,7 @@ vector<string> getListOfOps(string str)
         }
     }
     if (openParantheses > 0)
-        throw new invalid_argument("wrong input");
+        throw invalid_argument("number of '(' more that ')' at the end of the input");
     return result;
 }
 
@@ -155,7 +164,7 @@ void printTerm(vector<string> trm)
 //    for (int i = 0; i < trm.size(); i++)
 //    {
 //        string a = trm[i];
-//        int num;
+//        int num = NULL;
 //        try
 //        {
 //            num = stoi(a);
@@ -164,15 +173,11 @@ void printTerm(vector<string> trm)
 //        {
 
 //        }
-//        if (a.compare("+") == 0 ||
-//                a.compare("-") == 0 ||
-//                a.compare("*") == 0 ||
-//                a.compare("/") == 0 ||
-//                a.compare("(") == 0 ||
-//                a.compare(")") == 0)
+//        if (a == "+" || a == "-" || a == "*" ||
+//                a == "/" || a == "(" || a == ")")
 //        {
 //            if (stackCounter == 0)
-//                stack[++stackCounter] = trm[i];
+//                stack[stackCounter++] = trm[i];
 //            else
 //            {
 //                int c = stack[stackCounter];
