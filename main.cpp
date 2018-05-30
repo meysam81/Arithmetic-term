@@ -8,12 +8,50 @@
 #include <stdexcept>
 using namespace std;
 #include "stack.cpp"
-vector<string> in2post(vector<string>);
-stack<string> in2pre(vector<string>);
-stack<string> post2in(vector<string>);
-stack<string> pre2in(vector<string>);
-vector<string> getListOfOps(string);
-void printTerm(vector<string>);
+vector<string> in2post(vector<string>&);
+vector<string> in2pre(vector<string>&);
+string post2in(vector<string>);
+string pre2in(vector<string>);
+vector<string> stringToInfix(string&);
+vector<string> stringToVector(string&);
+void printTerm(vector<string>&);
+bool isDigit(const string& str)
+{
+    string::const_iterator iter = str.begin();
+    for(; isdigit(*iter) && iter != str.end(); iter++);
+    return !str.empty() && iter == str.end();
+
+}
+bool isOperator(const string& str)
+{
+    string::const_iterator iter = str.begin();
+    return !str.empty() && str.size() == 1 &&
+            (*iter == '*' || *iter == '+' || *iter == '-' || *iter == '/');
+}
+bool precedeOperator(const string& first, const string& second)
+{
+    if (first == "+" || first == "-")
+        return second == "*" || second == "/" || second == "^";
+    else if (first == "*" || first == "/")
+        return second == "*" || second == "/";
+    else if (first == "^")
+        return second == "^";
+}
+vector<string> getReverse(vector<string>& str)
+{
+    vector<string> z;
+    for (int i = str.size() - 1; i >= 0; i--)
+    {
+        if (str[i] == "(")
+            z.push_back(")");
+        else if (str[i] == ")")
+            z.push_back("(");
+        else
+            z.push_back(str[i]);
+    }
+    return z;
+}
+
 int main()
 {
     do
@@ -27,64 +65,85 @@ int main()
         cout << "1. I want to enter a prefix term." << endl
              << "2. I want to enter an infix term." << endl
              << "3. I want to enter a postfix term." << endl
-             << "4. Exit." << endl
+             << "default. Exit." << endl
              << "Enter your selection: ";
         int input;
         cin >> input;
-        if (input == 4)
-            return 0;
-
-        cout << "Enter your arithmetic term: ";
-        cin.ignore();
-        string term;
-        getline(cin, term);
-        vector<string> inputTerm;
         try
         {
-            inputTerm = getListOfOps(term);
+            string term;
+            vector<string> inputTerm;
+            vector<string> inToPre, inToPost;
+            string postToIn, preToIn;
+            switch (input)
+            {
+            case 1:
+                cout << "Enter your prefix term: ";
+                cin.ignore();
+                getline(cin, term);
+                inputTerm = stringToVector(term);
+
+                cout << "Equivalent infix term:\n";
+                preToIn = pre2in(inputTerm);
+                inputTerm = stringToInfix(preToIn);
+                printTerm(inputTerm);
+
+                cout << "Equivalent postfix term:\n";
+                inToPost = in2post(inputTerm);
+                printTerm(inToPost);
+
+
+                break;
+
+            case 2:
+                cout << "Enter your infix term: ";
+                cin.ignore();
+                getline(cin, term);
+                inputTerm = stringToInfix(term);
+
+                cout << "Equivalent prefix term:\n";
+                inToPre = in2pre(inputTerm);
+                printTerm(inToPre);
+
+                cout << "Equivalent postfix term:\n";
+                inToPost = in2post(inputTerm);
+                printTerm(inToPost);
+
+                break;
+
+            case 3:
+                cout << "Enter your postfix term: ";
+                cin.ignore();
+                getline(cin, term);
+                inputTerm = stringToVector(term);
+
+                cout << "Equivalent infix term:\n";
+                postToIn = post2in(inputTerm);
+                inputTerm = stringToInfix(postToIn);
+                inputTerm = getReverse(inputTerm);
+                printTerm(inputTerm);
+
+                cout << "Equivalent prefix term:\n";
+                inToPre = in2pre(inputTerm);
+                printTerm(inToPre);
+
+                break;
+
+            default:
+                return 0;
+            }
         }
         catch (const invalid_argument &ex)
         {
             cerr << ex.what() << endl;
             return 1;
         }
-//        vector<string> pre_2_in = pre2in(queue);
-//        vector<string> post_2_in = post2in(queue);
-//        stack<string> in_2_pre = in2pre(queue);
-        vector<string> in_2_post = in2post(inputTerm);
-        printTerm(in_2_post);
-//        vector<string> pre_2_post = in2post(pre_2_in);
-//        vector<string> post_2_pre = in2pre(post_2_in);
 
-//        switch (input)
-//        {
-//        case 1:
-//            cout << "The equivalent infix term: ";
-//            printTerm(pre_2_in);
-//            cout << "The equivalent postfix term: ";
-//            printTerm(pre_2_post);
-//            break;
-//        case 2:
-//            cout << "The equivalent prefix term: ";
-//            printTerm(in_2_pre);
-//            cout << "The equivalent postfix term: ";
-//            printTerm(in_2_post);
-//            break;
-//        case 3:
-//            cout << "The equivalent prefix term: ";
-//            printTerm(post_2_pre);
-//            cout << "The equivalent infix term: ";
-//            printTerm(post_2_in);
-//            break;
-//        default:
-//            cout << "WRONG Selection!!!" << endl;
-//            break;
-//        }
         cout << pressKey;
         cin.get();
     } while (true);
 }
-vector<string> getListOfOps(string str)
+vector<string> stringToInfix(string& str)
 {
     vector<string> result;
     string tmp = "";
@@ -143,254 +202,223 @@ vector<string> getListOfOps(string str)
             openParantheses--;
         }
     }
-    result.push_back(tmp);
+    if (tmp != "")
+        result.push_back(tmp);
     if (openParantheses > 0)
         throw invalid_argument("number of '(' more that ')' at the end of the input");
     return result;
 }
 
-void printTerm(vector<string> input)
+vector<string> stringToVector(string& str)
+{
+    vector<string> result;
+    string tmp = "";
+    short openParantheses = 0;
+    for (int i = 0; i < str.size(); i++)
+    {
+        char localTmp = str[i];
+        string lastOp = "";
+        if (!result.empty())
+            lastOp = *(result.end() - 1);
+        if (localTmp == ' ' || localTmp == '\t')
+        {
+            if (tmp != "")
+            {
+                result.push_back(tmp);
+                tmp = "";
+            }
+            continue;
+        }
+        else if (localTmp >= '0' && localTmp <= '9')
+        {
+            tmp += localTmp;
+        }
+        else if (localTmp == '+' || localTmp == '-' ||
+                 localTmp == '/' || localTmp == '*')
+        {
+            if (tmp != "")
+            {
+                result.push_back(tmp);
+                tmp = "";
+            }
+            result.push_back(string(1, localTmp));
+        }
+        else if (localTmp == '(')
+        {
+            openParantheses++;
+            result.push_back(string(1, localTmp));
+        }
+        else if (localTmp == ')')
+        {
+            if (tmp != "")
+            {
+                result.push_back(tmp);
+                tmp = "";
+            }
+            result.push_back(string(1, localTmp));
+            openParantheses--;
+        }
+    }
+    if (tmp != "")
+        result.push_back(tmp);
+    if (openParantheses > 0)
+        throw invalid_argument("number of '(' more that ')' at the end of the input");
+    return result;
+}
+
+void printTerm(vector<string>& input)
 {
     for (unsigned int i = 0; i < input.size(); i++)
-        cout << input[i] << setw(3);
+        cout << input[i] << setw(2);
     cout << endl;
 }
 
 // ========================================== infix to others ===================================================
-vector<string> in2post(vector<string> inputTerm)
+vector<string> in2post(vector<string>& x)
 {
-    vector<string> result;
-    vector<string> opStack;
-    for (unsigned short i = 0; i < inputTerm.size(); i++)
+    vector<string> y; // the equivalent postfix expression
+    stack<string> opStack;
+
+    // step 1: Push “(“onto Stack, and add “)” to the end of X.
+    opStack.push("(");
+    x.push_back(")");
+
+    // step 2: Scan X from left to right and repeat Step 3 to 6 for each element of X until the Stack is empty.
+    for (vector<string>::const_iterator iter = x.begin();
+         iter != x.end();
+         iter++)
     {
-        string currerntOp = inputTerm[i];
-        int num = NULL;
-        try
+        // step 3: If an operand is encountered, add it to Y.
+        if (isDigit(*iter))
+            y.push_back(*iter);
+
+        // step 4: If a left parenthesis is encountered, push it onto Stack.
+        else if (*iter == "(")
+            opStack.push(*iter);
+
+        // step 5: If an operator is encountered ,then:
+        else if (isOperator(*iter))
         {
-            num = stoi(currerntOp);
-        }
-        catch (...)
-        {
-            // do nothing because we can't convert operators to int
-            // so don't show any error message
-        }
-        if (currerntOp == "+" || currerntOp == "-" || currerntOp == "*" ||
-                currerntOp == "/" || currerntOp == "(" || currerntOp == ")")
-        {
-            if (opStack.size() == 0)
-                opStack.push_back(currerntOp);
-            else
+
+            // step 5.1: Repeatedly pop from Stack and add to Y each operator (on the top of Stack)
+            // which has the same precedence as or higher precedence than operator.
+            while (true)
             {
-                string lastOperator = *(opStack.end() - 1);
-                if (currerntOp == "(" || currerntOp == "^")
-                    opStack.push_back(currerntOp);
-                else if (currerntOp == "+" || currerntOp == "-" || currerntOp == "*" || currerntOp == "/")
+                string lastOperator = opStack.top();
+                if (precedeOperator(*iter, lastOperator))
                 {
-                    if (lastOperator == "*" || lastOperator == "/" || lastOperator == "^") // higher priority
-                    {
-                        while (lastOperator != "+" && lastOperator != "-" &&
-                               lastOperator != "(" && opStack.size() != 0)
-                        {
-                            result.push_back(*(opStack.end() - 1));
-                            opStack.pop_back();
-
-                            lastOperator = *(opStack.end() - 1);
-                        }
-                        opStack.push_back(currerntOp);
-                    }
-                    else
-                        opStack.push_back(currerntOp);
+                    y.push_back(lastOperator);
+                    opStack.pop();
                 }
-                else if (currerntOp == ")")
-                {
-                    while (lastOperator != "(" && opStack.size() != 0)
-                    {
-                        result.push_back(*(opStack.end() - 1));
-                        opStack.pop_back();
-
-                        lastOperator = *(opStack.end() - 1);
-                    }
-                }
+                else
+                    break;
             }
+            // step 5.2: Add operator to Stack.
+            opStack.push(*iter);
         }
-        else if (num != NULL) // currentOp is a number
+
+        // step 6: If a right parenthesis is encountered ,then:
+        else if (*iter == ")")
         {
-            result.push_back(currerntOp);
+            // step 6.1: Repeatedly pop from Stack and add to Y each operator (on the top of Stack)
+            // until a left parenthesis is encountered.
+            while (true)
+            {
+                string lastOperator = opStack.top();
+                if (lastOperator != "(")
+                {
+                    y.push_back(lastOperator);
+                    opStack.pop();
+                }
+                else
+                    break;
+            }
+            // step 6.2: Remove the left Parenthesis.
+            opStack.pop();
         }
     }
-    while (opStack.size() > 0)
+    while (!opStack.isEmpty())
     {
-        string lastOperation = *(opStack.end() - 1);
-        if (lastOperation != "(")
+        string lastOperator = opStack.top();
+        if (lastOperator != "(")
+            y.push_back(lastOperator);
+        opStack.pop();
+    }
+    // END
+    return y;
+}
+
+vector<string> in2pre(vector<string>& x)
+{
+    /* 1. get the infix expression
+     * 2. reverse the infix notation
+     * 3. get the equivalent postfix notation of result from step 2 (in2post)
+     * 4. reverse the expression from step 3 to some y
+     * 5. the result is in y and can be used accordingly
+     */
+    vector<string> reverse = getReverse(x);
+    vector<string> y = in2post(reverse);
+    return getReverse(y);
+}
+string post2in(vector<string> x)
+{
+    /* Algorithm
+    1.While there are input symbol left
+        1.1 Read the next symbol from the input.
+    2.If the symbol is an operand
+        2.1 Push it onto the stack.
+    3.Otherwise,
+        3.1 the symbol is an operator.
+        3.2 Pop the top 2 values from the stack.
+        3.3 Put the operator, with the values as arguments and form a string.
+        3.4 Push the resulted string back to stack.
+    4.If there is only one value in the stack
+        4.1 That value in the stack is the desired infix string. */
+    stack<string> opStack;
+    for (vector<string>::const_iterator iter = x.begin(); iter != x.end(); iter++)
+    {
+        if (isDigit(*iter)) // step 2
+            opStack.push(*iter);
+        else if (isOperator(*iter)) // step 3
         {
-            result.push_back(*(opStack.end() - 1));
-            opStack.pop_back();
-        }
-        else
-        {
-            opStack.pop_back();
+            string op1 = opStack.top();
+            opStack.pop();
+            string op2 = opStack.top();
+            opStack.pop();
+            string result = "(" + op1 + *iter + op2 + ")";
+            opStack.push(result);
         }
     }
-    return result;
+    if (opStack.getSize() == 1)
+        return opStack.top();
+
 }
-//vector<string> in2pre(vector<string> inputTerm)
-//{
-//    string temp1, temp2;
-//    vector<string> stackOperand, stackOperation;
-//    for (int i = 0; i < inputTerm.size(); i++)
-//    {
-//        string currentOp = inputTerm[i];
-//        int num = NULL;
-//        try
-//        {
-//            num = stoi(currentOp);
-//        }
-//        catch (...)
-//        {
-//            // do nothing because we can't convert operators to int
-//            // so don't show any error message
-//        }
-//        if (currentOp == "(" || currentOp == ")" || currentOp == "^" ||
-//                currentOp == "+" || currentOp == "-" ||
-//                currentOp == "*" || currentOp == "/")
-//        {
-//            if (stackOperation.size() == 0)
-//                stackOperation.push_back(currentOp);
-//            else
-//            {
-//                string lastOperation = *(stackOperation.end() - 1);
-//                if (currentOp == "(" || currentOp == "^")
-//                    stackOperation.push_back(currentOp);
-//                else if (currentOp == "+" || currentOp == "-" ||
-//                         currentOp == "*" || currentOp == "/")
-//                {
-//                    if (lastOperation == "*" || lastOperation == "/" || lastOperation == "^")
-//                    {
-//                        temp2 = *(stackOperand.end() - 1);
-//                        stackOperand.pop_back();
-//                        temp1 = *(stackOperand.end() - 1);
-//                        stackOperand.pop_back();
-//                        stackOperand.push_back(*(stackOperation.end() - 1));
-//                        stackOperation.pop_back();
-//                        stackOperand.push_back(temp1);
-//                        stackOperand.push_back(temp2);
-//                        stackOperation.push_back(currentOp);
-//                    }
-//                    else
-//                        stackOperation.push_back(currentOp);
-//                }
-//                else if (currentOp == ")")
-//                {
-//                    while (lastOperation != "(" && stackOperation.size() != 0)
-//                    {
-//                        temp2 = *(stackOperand.end() - 1);
-//                        stackOperand.pop_back();
-//                        temp1 = *(stackOperand.end() - 1);
-//                        stackOperand.pop_back();
-//                        stackOperand.push_back(*(stackOperation.end() - 1));
-//                        stackOperation.pop_back();
-//                        stackOperand.push_back(temp1);
-//                        stackOperand.push_back(temp2);
-//                        lastOperation = *(stackOperation.end() - 1);
-//                    }
-//                    stackOperation.pop_back();
-//                }
-//            }
-//        }
-//        else if (num != NULL)
-//        {
-//            stackOperand.push_back(currentOp);
-//        }
-//    }
-//    while (stackOperation.size() != 0)
-//    {
-//        string lastOpertaion = *(stackOperation.end() - 1);
-//        if (lastOpertaion != "(")
-//        {
-//            temp2 = *(stackOperand.end() - 1);
-//            stackOperand.pop_back();
-//            temp1 = *(stackOperand.end() - 1);
-//            stackOperand.pop_back();
-//            stackOperand.push_back(*(stackOperation.end() - 1));
-//            stackOperation.pop_back();
-//            stackOperand.push_back(temp1);
-//            stackOperand.push_back(temp2);
-//        }
-//        else
-//        {
-//            stackOperation.pop_back();
-//        }
-//    }
-//    return stackOperand;
-//}
-//string post2in(string trm)
-//{
-//    string trm_in, stack[100], temp1, temp2;
-//    int counter = 0;
-//    for (int i = 0; i < trm.length(); i++)
-//    {
-//        int a = trm[i];
-//        if (a >= 48 && a <= 57)
-//        {
-//            return "CAN'T CONTINUE WITH DIGITS!!!";
-//        }
-//        else if ((a >= 97 && a <= 122) || (a >= 65 && a <= 90))
-//        {
-//            stack[++counter] = trm[i];
-//        }
-//        else
-//        {
-//            temp2 = stack[counter--];
-//            temp2 += ")";
-//            temp1 = "(";
-//            temp1 += stack[counter--];
-//            ++counter;
-//            stack[counter] = temp1;
-//            stack[counter] += trm[i];
-//            stack[counter] += temp2;
-//        }
-//    }
-//    trm_in = stack[1];
-//    return trm_in;
-//}
-//string pre2in(vector<string> trm)
-//{
-//    string trm_in, stack_operand[100], temp1, temp2, stack_operation[100];
-//    int counter_operation = 0, counter_operand = 0;
-//    for (int i = 0; i < trm.length(); i++)
-//    {
-//        int a = trm[i], b = trm[i - 1];
-//        if (a >= 48 && a <= 57)
-//        {
-//            return "CAN'T CONTINUE WITH DIGITS!!!";
-//        }
-//        else if ((a >= 97 && a <= 122) || (a >= 65 && a <= 90))
-//        {
-//            stack_operand[++counter_operand] = trm[i];
-//            if ((b >= 97 && b <= 122) || (b >= 65 && b <= 90))
-//            {
-//                temp2 = stack_operand[counter_operand--];
-//                temp2 += ")";
-//                temp1 = "(";
-//                temp1 += stack_operand[counter_operand--];
-//                temp1 += stack_operation[counter_operation--];
-//                stack_operand[++counter_operand] = temp1 + temp2;
-//            }
-//        }
-//        else
-//        {
-//            stack_operation[++counter_operation] = trm[i];
-//        }
-//    }
-//    while (counter_operand != 0)
-//    {
-//        temp2 = stack_operand[counter_operand--];
-//        temp2 += ")";
-//        temp1 = "(";
-//        temp1 += stack_operand[counter_operand--];
-//        temp1 += stack_operation[counter_operation--];
-//        stack_operand[++counter_operand] = temp1 + temp2;
-//    }
-//    trm_in = stack_operand[counter_operand];
-//    return trm_in;
-//}
+
+string pre2in(vector<string> x)
+{
+    /* 1. Read the Prefix expression in reverse order (from right to left)
+       2. If the symbol is an operand, then push it onto the Stack
+       3. If the symbol is an operator, then pop two operands from the Stack
+       4. Create a string by concatenating the two operands and the operator between them.
+       5. string = (operand1 + operator + operand2)
+       6. And push the resultant string back to Stack
+       7. Repeat the above steps until end of Prefix expression.*/
+    x = getReverse(x);
+    stack<string> opStack;
+    for (vector<string>::const_iterator iter = x.begin(); iter != x.end(); iter++)
+    {
+        if (isDigit(*iter))
+            opStack.push(*iter);
+        else if (isOperator(*iter))
+        {
+            string op1 = opStack.top();
+            opStack.pop();
+            string op2 = opStack.top();
+            opStack.pop();
+            string res = "(" + op1 + *iter + op2 + ")";
+            opStack.push(res);
+        }
+    }
+    if (opStack.getSize() == 1)
+        return opStack.top();
+}

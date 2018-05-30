@@ -34,12 +34,11 @@ bool stack<T>::isEmpty()
 {
     return storage.size() == 0;
 }
-
 template <class T>
-ostream &operator <<(ostream &output, const stack<T> item)
+void stack<T>::printStack()
 {
-    for (unsigned int i = 0; i < item.storage.size(); i++)
-        output << item.storage[i] << setw(3);
-    output << endl;
-    return output;
+    for (unsigned int i = 0; i < storage.size(); i++)
+        cout << storage[i] << setw(3);
+    cout << endl;
+
 }

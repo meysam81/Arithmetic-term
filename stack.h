@@ -16,8 +16,6 @@ public:
     void pop();
     T top();
     bool isEmpty();
-    friend ostream& operator << (ostream& output, const stack<T> item);
+    void printStack();
 };
-template <class T>
-ostream& operator << (ostream& output, const stack<T> item);
 #endif // STACK_H
