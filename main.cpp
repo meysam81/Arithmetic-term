@@ -1,5 +1,4 @@
 #include <iostream>
-#include <QException>
 #include <string.h>
 #include <string>
 #include <iomanip>
@@ -51,7 +50,6 @@ vector<string> getReverse(vector<string>& str)
     }
     return z;
 }
-
 int main()
 {
     do
@@ -138,7 +136,6 @@ int main()
             cerr << ex.what() << endl;
             return 1;
         }
-
         cout << pressKey;
         cin.get();
     } while (true);
