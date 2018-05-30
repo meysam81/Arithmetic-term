@@ -149,7 +149,7 @@ vector<string> stringToInfix(string& str)
     {
         char localTmp = str[i];
         string lastOp = "";
-        if (!result.empty())
+        if (result.size() > 0)
             lastOp = *(result.end() - 1);
         if (localTmp >= '0' && localTmp <= '9')
         {

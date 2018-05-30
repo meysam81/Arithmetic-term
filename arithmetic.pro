@@ -8,9 +8,8 @@ CONFIG -= app_bundle
 TEMPLATE = app
 
 SOURCES += \
-    stack.cpp
     main.cpp \
+    stack.cpp
 
 HEADERS += \
     stack.h
-
