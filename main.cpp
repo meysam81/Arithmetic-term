@@ -52,7 +52,8 @@ int main()
 //        vector<string> pre_2_in = pre2in(queue);
 //        vector<string> post_2_in = post2in(queue);
 //        vector<string> in_2_pre = in2pre(queue);
-//        vector<string> in_2_post = in2post(queue);
+        vector<string> in_2_post = in2post(queue);
+        printTerm(in_2_post);
 //        vector<string> pre_2_post = in2post(pre_2_in);
 //        vector<string> post_2_pre = in2pre(post_2_in);
 
@@ -108,12 +109,12 @@ vector<string> getListOfOps(string str)
             if (tmp == "")
             {
                 if (result.size() == 0)
-                    throw invalid_argument("operand in the beginning of the input at position " + i);
+                    throw invalid_argument("operator in the beginning of the input at position " + i);
                 else if (lastOp == "+" || lastOp == "-" ||
                          lastOp == "*" || lastOp == "/")
-                    throw invalid_argument("operand after operand at position " + i);
+                    throw invalid_argument("operator after operator at position " + i);
                 else if (lastOp == "(")
-                    throw invalid_argument("operand after '(' at position " + i);
+                    throw invalid_argument("operator after '(' at position " + i);
             }
             else // if (tmp != "")
             {
@@ -144,6 +145,7 @@ vector<string> getListOfOps(string str)
             openParantheses--;
         }
     }
+    result.push_back(tmp);
     if (openParantheses > 0)
         throw invalid_argument("number of '(' more that ')' at the end of the input");
     return result;
@@ -156,74 +158,84 @@ void printTerm(vector<string> trm)
     cout << endl;
 }
 
-//vector<string> in2post(vector<string> trm)
-//{
-//    vector<string> trm_post;
-//    char stack[100];
-//    int stackCounter = 0;
-//    for (int i = 0; i < trm.size(); i++)
-//    {
-//        string a = trm[i];
-//        int num = NULL;
-//        try
-//        {
-//            num = stoi(a);
-//        }
-//        catch (...)
-//        {
 
-//        }
-//        if (a == "+" || a == "-" || a == "*" ||
-//                a == "/" || a == "(" || a == ")")
-//        {
-//            if (stackCounter == 0)
-//                stack[stackCounter++] = trm[i];
-//            else
-//            {
-//                int c = stack[stackCounter];
-//                if (a == 40 || a == 94)
-//                    stack[++stackCounter] = trm[i];
-//                else if (a == 43 || a == 45 || a == 42 || a == 47)
-//                {
-//                    if (c == 42 || c == 47 || c == 94)
-//                    {
-//                        while (c != 43 && c != 45 && c != 40 && stackCounter != 0)
-//                        {
-//                            trm_post += stack[stackCounter--];
-//                            c = stack[stackCounter];
-//                        }
-//                        stack[++stackCounter] = trm[i];
-//                    }
-//                    else
-//                        stack[++stackCounter] = trm[i];
-//                }
-//                else if (a == 41)
-//                {
-//                    while (c != 40 && stackCounter != 0)
-//                    {
-//                        trm_post += stack[stackCounter--];
-//                        c = stack[stackCounter];
-//                    }
-//                    stackCounter--;
-//                }
-//            }
-//        }
-//    }
-//    while (stackCounter != 0)
-//    {
-//        int c = stack[stackCounter];
-//        if (c != 40)
-//        {
-//            trm_post += stack[stackCounter--];
-//        }
-//        else
-//        {
-//            stackCounter--;
-//            trm_post += stack[stackCounter--];
-//        }
-//    }
-//    return trm_post;
-//}
+// ========================================== infix to others ===================================================
+vector<string> in2post(vector<string> inputTerm)
+{
+    vector<string> result;
+    vector<string> stack;
+    for (unsigned short i = 0; i < inputTerm.size(); i++)
+    {
+        string currerntOp = inputTerm[i];
+        int num = NULL;
+        try
+        {
+            num = stoi(currerntOp);
+        }
+        catch (...)
+        {
+            // do nothing because we can't convert operators to int
+            // so don't show any error message
+        }
+        if (currerntOp == "+" || currerntOp == "-" || currerntOp == "*" ||
+                currerntOp == "/" || currerntOp == "(" || currerntOp == ")")
+        {
+            if (stack.size() == 0)
+                stack.push_back(currerntOp);
+            else
+            {
+                string lastOperator = *(stack.end() - 1);
+                if (currerntOp == "(" || currerntOp == "^")
+                    stack.push_back(currerntOp);
+                else if (currerntOp == "+" || currerntOp == "-" || currerntOp == "*" || currerntOp == "/")
+                {
+                    if (lastOperator == "*" || lastOperator == "/" || lastOperator == "^") // higher priority
+                    {
+                        while (lastOperator != "+" && lastOperator != "-" &&
+                               lastOperator != "(" && stack.size() != 0)
+                        {
+                            result.push_back(*(stack.end() - 1));
+                            stack.pop_back();
+
+                            lastOperator = *(stack.end() - 1);
+                        }
+                        stack.push_back(currerntOp);
+                    }
+                    else
+                        stack.push_back(currerntOp);
+                }
+                else if (currerntOp == ")")
+                {
+                    while (lastOperator != "(" && stack.size() != 0)
+                    {
+                        result.push_back(*(stack.end() - 1));
+                        stack.pop_back();
+
+                        lastOperator = *(stack.end() - 1);
+                    }
+                }
+            }
+        }
+        else if (num != NULL) // currentOp is a number
+        {
+            result.push_back(inputTerm[i]);
+        }
+    }
+    while (stack.size() > 0)
+    {
+        string lastOperation = *(stack.end() - 1);
+        if (lastOperation != "(")
+        {
+            result.push_back(*(stack.end() - 1));
+            stack.pop_back();
+        }
+        else
+        {
+            stack.pop_back();
+        }
+    }
+    return result;
+}
 //string in2pre(string trm)
 //{
 //    string trm_pre, temp2, temp1, stack_operand[100];
