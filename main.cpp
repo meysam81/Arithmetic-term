@@ -7,10 +7,11 @@
 #include <vector>
 #include <stdexcept>
 using namespace std;
+#include "stack.cpp"
 vector<string> in2post(vector<string>);
-vector<string> in2pre(vector<string>);
-vector<string> post2in(vector<string>);
-vector<string> pre2in(vector<string>);
+stack<string> in2pre(vector<string>);
+stack<string> post2in(vector<string>);
+stack<string> pre2in(vector<string>);
 vector<string> getListOfOps(string);
 void printTerm(vector<string>);
 int main()
@@ -37,22 +38,20 @@ int main()
         cin.ignore();
         string term;
         getline(cin, term);
-        vector<string> queue;
+        vector<string> inputTerm;
         try
         {
-            queue = getListOfOps(term);
+            inputTerm = getListOfOps(term);
         }
         catch (const invalid_argument &ex)
         {
             cerr << ex.what() << endl;
             return 1;
         }
-        printTerm(queue);
-
 //        vector<string> pre_2_in = pre2in(queue);
 //        vector<string> post_2_in = post2in(queue);
-//        vector<string> in_2_pre = in2pre(queue);
-        vector<string> in_2_post = in2post(queue);
+//        stack<string> in_2_pre = in2pre(queue);
+        vector<string> in_2_post = in2post(inputTerm);
         printTerm(in_2_post);
 //        vector<string> pre_2_post = in2post(pre_2_in);
 //        vector<string> post_2_pre = in2pre(post_2_in);
@@ -84,7 +83,6 @@ int main()
         cout << pressKey;
         cin.get();
     } while (true);
-    return 0;
 }
 vector<string> getListOfOps(string str)
 {
@@ -95,7 +93,7 @@ vector<string> getListOfOps(string str)
     {
         char localTmp = str[i];
         string lastOp = "";
-        if (result.size() > 0)
+        if (!result.empty())
             lastOp = *(result.end() - 1);
         if (localTmp >= '0' && localTmp <= '9')
         {
@@ -108,7 +106,7 @@ vector<string> getListOfOps(string str)
         {
             if (tmp == "")
             {
-                if (result.size() == 0)
+                if (result.empty())
                     throw invalid_argument("operator in the beginning of the input at position " + i);
                 else if (lastOp == "+" || lastOp == "-" ||
                          lastOp == "*" || lastOp == "/")
@@ -151,19 +149,18 @@ vector<string> getListOfOps(string str)
     return result;
 }
 
-void printTerm(vector<string> trm)
+void printTerm(vector<string> input)
 {
-    for(vector<string>::iterator iter = trm.begin(); iter != trm.end(); iter++)
-        cout << *iter << setw(2);
+    for (unsigned int i = 0; i < input.size(); i++)
+        cout << input[i] << setw(3);
     cout << endl;
 }
-
 
 // ========================================== infix to others ===================================================
 vector<string> in2post(vector<string> inputTerm)
 {
     vector<string> result;
-    vector<string> stack;
+    vector<string> opStack;
     for (unsigned short i = 0; i < inputTerm.size(); i++)
     {
         string currerntOp = inputTerm[i];
@@ -180,133 +177,151 @@ vector<string> in2post(vector<string> inputTerm)
         if (currerntOp == "+" || currerntOp == "-" || currerntOp == "*" ||
                 currerntOp == "/" || currerntOp == "(" || currerntOp == ")")
         {
-            if (stack.size() == 0)
-                stack.push_back(currerntOp);
+            if (opStack.size() == 0)
+                opStack.push_back(currerntOp);
             else
             {
-                string lastOperator = *(stack.end() - 1);
+                string lastOperator = *(opStack.end() - 1);
                 if (currerntOp == "(" || currerntOp == "^")
-                    stack.push_back(currerntOp);
+                    opStack.push_back(currerntOp);
                 else if (currerntOp == "+" || currerntOp == "-" || currerntOp == "*" || currerntOp == "/")
                 {
                     if (lastOperator == "*" || lastOperator == "/" || lastOperator == "^") // higher priority
                     {
                         while (lastOperator != "+" && lastOperator != "-" &&
-                               lastOperator != "(" && stack.size() != 0)
+                               lastOperator != "(" && opStack.size() != 0)
                         {
-                            result.push_back(*(stack.end() - 1));
-                            stack.pop_back();
+                            result.push_back(*(opStack.end() - 1));
+                            opStack.pop_back();
 
-                            lastOperator = *(stack.end() - 1);
+                            lastOperator = *(opStack.end() - 1);
                         }
-                        stack.push_back(currerntOp);
+                        opStack.push_back(currerntOp);
                     }
                     else
-                        stack.push_back(currerntOp);
+                        opStack.push_back(currerntOp);
                 }
                 else if (currerntOp == ")")
                 {
-                    while (lastOperator != "(" && stack.size() != 0)
+                    while (lastOperator != "(" && opStack.size() != 0)
                     {
-                        result.push_back(*(stack.end() - 1));
-                        stack.pop_back();
+                        result.push_back(*(opStack.end() - 1));
+                        opStack.pop_back();
 
-                        lastOperator = *(stack.end() - 1);
+                        lastOperator = *(opStack.end() - 1);
                     }
                 }
             }
         }
         else if (num != NULL) // currentOp is a number
         {
-            result.push_back(inputTerm[i]);
+            result.push_back(currerntOp);
         }
     }
-    while (stack.size() > 0)
+    while (opStack.size() > 0)
     {
-        string lastOperation = *(stack.end() - 1);
+        string lastOperation = *(opStack.end() - 1);
         if (lastOperation != "(")
         {
-            result.push_back(*(stack.end() - 1));
-            stack.pop_back();
+            result.push_back(*(opStack.end() - 1));
+            opStack.pop_back();
         }
         else
         {
-            stack.pop_back();
+            opStack.pop_back();
         }
     }
     return result;
 }
-//string in2pre(string trm)
+//vector<string> in2pre(vector<string> inputTerm)
 //{
-//    string trm_pre, temp2, temp1, stack_operand[100];
-//    char stack_operation[100];
-//    int  counter_operand = 0, counter_operation = 0;
-//    stack_operand[counter_operand] = "";
-//    for (int i = 0; i < trm.length(); i++)
+//    string temp1, temp2;
+//    vector<string> stackOperand, stackOperation;
+//    for (int i = 0; i < inputTerm.size(); i++)
 //    {
-//        int a = trm[i];
-//        if ((a >= 97 && a <= 122) || (a >= 65 && a <= 90))
+//        string currentOp = inputTerm[i];
+//        int num = NULL;
+//        try
 //        {
-//            ++counter_operand;
-//            stack_operand[counter_operand] = trm[i];
+//            num = stoi(currentOp);
 //        }
-//        else if (a == 40 || a == 94 || a == 43 || a == 45 || a == 42 || a == 47 || a == 41)
+//        catch (...)
 //        {
-//            if (counter_operation == 0)
-//                stack_operation[++counter_operation] = trm[i];
+//            // do nothing because we can't convert operators to int
+//            // so don't show any error message
+//        }
+//        if (currentOp == "(" || currentOp == ")" || currentOp == "^" ||
+//                currentOp == "+" || currentOp == "-" ||
+//                currentOp == "*" || currentOp == "/")
+//        {
+//            if (stackOperation.size() == 0)
+//                stackOperation.push_back(currentOp);
 //            else
 //            {
-//                int c = stack_operation[counter_operation];
-//                if (a == 40 || a == 94)
-//                    stack_operation[++counter_operation] = trm[i];
-//                else if (a == 43 || a == 45 || a == 42 || a == 47)
+//                string lastOperation = *(stackOperation.end() - 1);
+//                if (currentOp == "(" || currentOp == "^")
+//                    stackOperation.push_back(currentOp);
+//                else if (currentOp == "+" || currentOp == "-" ||
+//                         currentOp == "*" || currentOp == "/")
 //                {
-//                    if (c == 42 || c == 47 || c == 94)
+//                    if (lastOperation == "*" || lastOperation == "/" || lastOperation == "^")
 //                    {
-//                        temp2 = stack_operand[counter_operand--];
-//                        temp1 = stack_operand[counter_operand--];
-//                        stack_operand[++counter_operand] = stack_operation[counter_operation--];
-//                        stack_operand[counter_operand] += temp1;
-//                        stack_operand[counter_operand] += temp2;
-//                        stack_operation[++counter_operation] = trm[i];
+//                        temp2 = *(stackOperand.end() - 1);
+//                        stackOperand.pop_back();
+//                        temp1 = *(stackOperand.end() - 1);
+//                        stackOperand.pop_back();
+//                        stackOperand.push_back(*(stackOperation.end() - 1));
+//                        stackOperation.pop_back();
+//                        stackOperand.push_back(temp1);
+//                        stackOperand.push_back(temp2);
+//                        stackOperation.push_back(currentOp);
 //                    }
 //                    else
-//                        stack_operation[++counter_operation] = trm[i];
+//                        stackOperation.push_back(currentOp);
 //                }
-//                else if (a == 41)
+//                else if (currentOp == ")")
 //                {
-//                    while (c != 40 && counter_operation != 0)
+//                    while (lastOperation != "(" && stackOperation.size() != 0)
 //                    {
-//                        temp2 = stack_operand[counter_operand--];
-//                        temp1 = stack_operand[counter_operand--];
-//                        stack_operand[++counter_operand] = stack_operation[counter_operation--];
-//                        stack_operand[counter_operand] += temp1;
-//                        stack_operand[counter_operand] += temp2;
-//                        c = stack_operation[counter_operation];
+//                        temp2 = *(stackOperand.end() - 1);
+//                        stackOperand.pop_back();
+//                        temp1 = *(stackOperand.end() - 1);
+//                        stackOperand.pop_back();
+//                        stackOperand.push_back(*(stackOperation.end() - 1));
+//                        stackOperation.pop_back();
+//                        stackOperand.push_back(temp1);
+//                        stackOperand.push_back(temp2);
+//                        lastOperation = *(stackOperation.end() - 1);
 //                    }
-//                    counter_operation--;
+//                    stackOperation.pop_back();
 //                }
 //            }
 //        }
-//    }
-//    while (counter_operation != 0)
-//    {
-//        int c = stack_operation[counter_operation];
-//        if (c != 40)
+//        else if (num != NULL)
 //        {
-//            temp2 = stack_operand[counter_operand--];
-//            temp1 = stack_operand[counter_operand--];
-//            stack_operand[++counter_operand] = stack_operation[counter_operation--];
-//            stack_operand[counter_operand] += temp1;
-//            stack_operand[counter_operand] += temp2;
+//            stackOperand.push_back(currentOp);
+//        }
+//    }
+//    while (stackOperation.size() != 0)
+//    {
+//        string lastOpertaion = *(stackOperation.end() - 1);
+//        if (lastOpertaion != "(")
+//        {
+//            temp2 = *(stackOperand.end() - 1);
+//            stackOperand.pop_back();
+//            temp1 = *(stackOperand.end() - 1);
+//            stackOperand.pop_back();
+//            stackOperand.push_back(*(stackOperation.end() - 1));
+//            stackOperation.pop_back();
+//            stackOperand.push_back(temp1);
+//            stackOperand.push_back(temp2);
 //        }
 //        else
 //        {
-//            counter_operation--;
+//            stackOperation.pop_back();
 //        }
 //    }
-//    trm_pre = stack_operand[counter_operand];
-//    return trm_pre;
+//    return stackOperand;
 //}
 //string post2in(string trm)
 //{
