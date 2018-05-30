@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # This file is used to ignore files which are generated
 # ----------------------------------------------------------------------------
 
@@ -71,3 +72,6 @@ Thumbs.db
 *.exe
 
 
+=======
+*.autosave
+>>>>>>> 228cc3695750fbbca13fe963a4371ee40d796853
