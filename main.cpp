@@ -7,6 +7,8 @@
 #include <stdexcept>
 using namespace std;
 #include "stack.cpp"
+#include <stdlib.h>
+
 vector<string> in2post(vector<string>&);
 vector<string> in2pre(vector<string>&);
 string post2in(vector<string>);
@@ -14,6 +16,8 @@ string pre2in(vector<string>);
 vector<string> stringToInfix(string&);
 vector<string> stringToVector(string&);
 void printTerm(vector<string>&);
+string evalExp(vector<string>);
+
 bool isDigit(const string& str)
 {
     string::const_iterator iter = str.begin();
@@ -30,7 +34,7 @@ bool isOperator(const string& str)
 bool precedeOperator(const string& first, const string& second)
 {
     if (first == "+" || first == "-")
-        return second == "*" || second == "/" || second == "^";
+        return isOperator(second);
     else if (first == "*" || first == "/")
         return second == "*" || second == "/";
     else if (first == "^")
@@ -67,6 +71,7 @@ int main()
              << "Enter your selection: ";
         int input;
         cin >> input;
+        vector<string> preExpr;
         try
         {
             string term;
@@ -90,6 +95,7 @@ int main()
                 inToPost = in2post(inputTerm);
                 printTerm(inToPost);
 
+                preExpr = inToPost;
 
                 break;
 
@@ -107,6 +113,8 @@ int main()
                 inToPost = in2post(inputTerm);
                 printTerm(inToPost);
 
+                preExpr = inToPost;
+
                 break;
 
             case 3:
@@ -114,6 +122,8 @@ int main()
                 cin.ignore();
                 getline(cin, term);
                 inputTerm = stringToVector(term);
+
+                preExpr = inputTerm;
 
                 cout << "Equivalent infix term:\n";
                 postToIn = post2in(inputTerm);
@@ -136,6 +146,8 @@ int main()
             cerr << ex.what() << endl;
             return 1;
         }
+        cout << "The evaluation of the expression is: " << fixed
+             << setprecision(2) <<  stof(evalExp(preExpr)) << endl;
         cout << pressKey;
         cin.get();
     } while (true);
@@ -414,6 +426,39 @@ string pre2in(vector<string> x)
             opStack.pop();
             string res = "(" + op1 + *iter + op2 + ")";
             opStack.push(res);
+        }
+    }
+    if (opStack.getSize() == 1)
+        return opStack.top();
+}
+string evalExp(vector<string> postfixTerm)
+{
+    stack<string> opStack;
+    for (vector<string>::const_iterator iter = postfixTerm.begin(); iter != postfixTerm.end(); iter++)
+    {
+        if (isDigit(*iter)) // step 2
+            opStack.push(*iter);
+        else if (isOperator(*iter)) // step 3
+        {
+            string op2 = opStack.top();
+            opStack.pop();
+            string op1 = opStack.top();
+            opStack.pop();
+
+            float res = 0.0;
+            float operand1 = stof(op1),
+                    operand2 = stof(op2);
+
+            if (*iter == "+")
+                res = operand1 + operand2;
+            else if (*iter == "-")
+                res = operand1 - operand2;
+            else if (*iter == "*")
+                res = operand1 * operand2;
+            else if (*iter == "/")
+                res = operand1 / operand2;
+
+            opStack.push(to_string(res));
         }
     }
     if (opStack.getSize() == 1)

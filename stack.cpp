@@ -38,7 +38,7 @@ template <class T>
 void stack<T>::printStack()
 {
     for (unsigned int i = 0; i < storage.size(); i++)
-        cout << storage[i] << setw(3);
+        cout << storage[i] << setw(2);
     cout << endl;
 
 }
