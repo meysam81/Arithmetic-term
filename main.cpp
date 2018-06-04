@@ -3,6 +3,7 @@
 #include <string>
 #include <iomanip>
 #include <cstdio>
+#include <sstream>
 #include <vector>
 #include <stdexcept>
 using namespace std;
@@ -71,7 +72,7 @@ int main()
              << "Enter your selection: ";
         int input;
         cin >> input;
-        vector<string> preExpr;
+        vector<string> postExpr;
         try
         {
             string term;
@@ -95,7 +96,7 @@ int main()
                 inToPost = in2post(inputTerm);
                 printTerm(inToPost);
 
-                preExpr = inToPost;
+                postExpr = inToPost;
 
                 break;
 
@@ -113,7 +114,7 @@ int main()
                 inToPost = in2post(inputTerm);
                 printTerm(inToPost);
 
-                preExpr = inToPost;
+                postExpr = inToPost;
 
                 break;
 
@@ -123,7 +124,7 @@ int main()
                 getline(cin, term);
                 inputTerm = stringToVector(term);
 
-                preExpr = inputTerm;
+                postExpr = inputTerm;
 
                 cout << "Equivalent infix term:\n";
                 postToIn = post2in(inputTerm);
@@ -146,8 +147,7 @@ int main()
             cerr << ex.what() << endl;
             return 1;
         }
-        cout << "The evaluation of the expression is: " << fixed
-             << setprecision(2) <<  stof(evalExp(preExpr)) << endl;
+        cout << "The evaluation of the expression is: " << evalExp(postExpr) << endl;
         cout << pressKey;
         cin.get();
     } while (true);
@@ -446,8 +446,8 @@ string evalExp(vector<string> postfixTerm)
             opStack.pop();
 
             float res = 0.0;
-            float operand1 = stof(op1),
-                    operand2 = stof(op2);
+            float operand1 = strtof(op1.c_str(), 0),
+                    operand2 = strtof(op2.c_str(), 0);
 
             if (*iter == "+")
                 res = operand1 + operand2;
@@ -457,8 +457,9 @@ string evalExp(vector<string> postfixTerm)
                 res = operand1 * operand2;
             else if (*iter == "/")
                 res = operand1 / operand2;
-
-            opStack.push(to_string(res));
+            stringstream ss;
+            ss << fixed << setprecision(2) << res;
+            opStack.push(ss.str());
         }
     }
     if (opStack.getSize() == 1)
